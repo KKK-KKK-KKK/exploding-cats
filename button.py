@@ -7,7 +7,7 @@ class Button:
     visibility = False
 
     def __init__(self, image_path, center_coords):
-        print(f"Creating button with image: {image_path} at: {center_coords}")
+        # print(f"Creating button with image: {image_path} at: {center_coords}")
         self.image = pygame.image.load(image_path)
         self.rect = self.image.get_rect()
         self.rect.center = center_coords

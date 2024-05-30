@@ -2,6 +2,7 @@ import pygame
 import sys
 import random
 from menu import Menu
+from button import Button
 from cardtypes import *
 
 class Game:
@@ -11,6 +12,8 @@ class Game:
     deck = None
     dealt_hands = False
     card_debug = False
+    pass_image_path = "./resources/images/pass.png"
+    player_two_pass_button = None
 
     def __init__(self, mode):
         self.mode = mode
@@ -29,6 +32,9 @@ class Game:
         if self.deck is None:
             self.deck = Deck()
             self.deck.fill_deck(amount)
+
+    def create_stack(self):
+        self.stack = Stack()
 
     def prepare_hands(self, draw_amount):
         if self.dealt_hands:
@@ -66,6 +72,13 @@ class Game:
         print("Revealing game")
         self.visibility = True
 
+    def reveal_player_two_cards(self):
+        self.player_two.hand.reveal_hand()
+
+    def draw_player_two_pass_button(self, surface):
+        self.player_two_pass_button = Button(self.pass_image_path, (500,500))
+        self.player_two_pass_button.draw_button(surface)
+
     def draw(self, screen):
         screen.blit(self.background_image, (0, 0))  # Rysowanie tła jako pierwsze
         if self.deck:
@@ -73,14 +86,46 @@ class Game:
         if self.player_one and self.player_two:
             self.player_one.hand.draw(screen, "top")
             self.player_two.hand.draw(screen, "bottom")
+            self.draw_player_two_pass_button(screen)
+            self.stack.draw(screen)
 
     def update(self):
-        pass
+        def do_card_action(player_user, player_target, card_type):
+            if card_type == 0:
+                print("ExplosiveCat action executing")
+                #check for defuse
+                #end game if not present
+            elif card_type == 1:
+                pass #Defuse
+            elif card_type == 2:
+                print("TacoCat action executing")
+            elif card_type == 3:
+                print("RainbowCat action executing")
+            elif card_type == 4:
+                print("BeardCat action executing")
+            elif card_type == 5:
+                print("Favor action executing")
+                stolen_card = player_target.hand.pop_from_hand()
+                player_user.hand.push_to_hand(stolen_card)
+        
 
+
+
+        popped_card = self.player_one.hand.update()
+        if popped_card is not None:
+            self.stack.update(popped_card)
+            do_card_action(self.player_one, self.player_two, popped_card.card_type) #act upon the type of the card
+        passed = self.player_one.hand.pass_turn(self.deck)
+
+        popped_card = self.player_two.hand.update()
+        if popped_card is not None:
+            self.stack.update(popped_card)
+            do_card_action(self.player_two, self.player_one, popped_card.card_type) #act upon the type of the card
+        passed = self.player_two.hand.pass_turn(self.deck)
 
 
 class Deck:
-    card_types = [0, 1, 2, 3, 4]  # always add enum when a new card is added to deck
+    card_types = [0, 1, 2, 3, 4, 5]  # always add enum when a new card is added to deck
     __MAX_EXPLOSIVE = 4
     __MAX_DEFUSE = 6
 
@@ -109,6 +154,13 @@ class Deck:
                 return RainbowCat(center_coords)
             elif card_type == 4:
                 return BeardCat(center_coords)
+            elif card_type == 5:
+                if card_version == 0:
+                    return Favor(center_coords)
+                if card_version == 1:
+                    return Favor_1(center_coords)
+                if card_version == 2:
+                    return Favor_2(center_coords)
             else:
                 try:
                     raise Exception("Incorrect card type selected in deck", "Exiting game")
@@ -134,7 +186,7 @@ class Deck:
 
         for i in range(amount):
             card = random.choice(card_types_deep_copy)
-            self.cards.append(get_card_type(card, (300, 300)))
+            self.cards.append(get_card_type(card, (350, 300)))
 
             # if max amount of card reached, then remove from card_types_deep_copy
             card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 0, self.__MAX_EXPLOSIVE)
@@ -183,6 +235,26 @@ class Deck:
 
         return viable_card
 
+class Stack:
+    stack_position = (150, 385) #this variable doesn't dictate location during game loop, look at Card class instead
+
+    def __init__(self):
+        self.cards = []
+        self.already_filled = False
+        self.visibility = False
+        print("Stack created")
+
+    def draw(self, surface):
+        for i in range(len(self.cards)):
+            self.cards[i].load_image(self.stack_position)
+            self.cards[i].place_card(self.stack_position)
+            self.cards[i].draw(surface)
+
+    def update(self, popped_card):
+        self.cards.append(popped_card)
+        for i in range(0, len(self.cards)):
+            self.cards[i].update(0)
+
 
 class Player:
     def __init__(self, nickname):
@@ -194,6 +266,8 @@ class Player:
         pass
 
 class Hand:
+    width_offset = 55
+
     def __init__(self):
         self.cards = []
         self.amount = 0
@@ -212,15 +286,58 @@ class Hand:
         self.cards.append(deck.draw_card_defuse())
         self.amount = len(self.cards)
 
+    def pop_from_hand(self):
+        if len(self.cards) > 0:
+            card = self.cards.pop()
+        else:
+            card = None
+        return card 
+
+    def push_to_hand(self, card):
+        self.cards.append(card)
+
+    def pass_turn(self, deck):
+        pass
+
+    def reveal_hand(self):
+        for i in range(0, len(self.cards)):
+            self.cards[i].obverse = True
+
     def print_hand(self):
         cards = [card.card_type for card in self.cards]
         print(cards)
 
     def draw(self, surface, side):
-        offset_y = 650 if side == "top" else 130
+        if side == "top":
+            offset_y = 130
+        elif side == "bottom":
+            offset_y = 650
         for i in range(len(self.cards)):
-            self.cards[i].load_image((60 + i * 50, offset_y))
+            if i == 10 and side == "bottom":
+                offset_y += 30
+            if i == 10 and side == "top":
+                offset_y -= 30
+            self.cards[i].load_image((60, 130))
+            self.cards[i].place_card((60 + i * self.width_offset, offset_y))
             self.cards[i].draw(surface)
+
+    
+    def update(self):
+        top_index = -1
+        for i in range(0, len(self.cards)):
+            put_card_on_stack = self.cards[i].update(self.width_offset)
+            if put_card_on_stack:
+                top_index = i
+
+        if top_index is not -1:
+            print(self.cards)
+            print(f"Hand cards length: {len(self.cards)-1}")
+            print(f"top_index: {top_index}")
+            return self.cards.pop(top_index)
+        
+        return None
+            
+
 
 
 
@@ -244,8 +361,9 @@ def main():
 
     DRAW_AMOUNT = 7
     DECK_SIZE = 32
+    pygame.event.set_allowed([pygame.QUIT]) #remember to add events if needed
 
-    while True:
+    while(1):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -263,9 +381,13 @@ def main():
                 game.prepare_deck(DECK_SIZE)
                 game.set_players("Player1", "Player2")
                 game.prepare_hands(DRAW_AMOUNT)
+                game.create_stack()
+                game.reveal_player_two_cards()
+                
         else:
+            print('test')
             game.draw(screen)
-
+            game.update()
         pygame.display.update()
 
 if __name__ == "__main__":
