@@ -15,6 +15,7 @@ class Game:
     card_debug = False
     pass_image_path = "./resources/images/pass.png"
     player_two_pass_button = None
+    winner = 0
 
     def __init__(self, mode):
         self.mode = mode
@@ -81,6 +82,17 @@ class Game:
             self.player_two_pass_button = Button(self.pass_image_path, (500,500))
         self.player_two_pass_button.draw_button(surface)
 
+    def draw_end(self, screen):
+        winner_path = ""
+        if self.winner == 1:
+            winner_path = "winner1.png"
+        elif self.winner == 2:
+            winner_path = "winner2.png"
+        else:
+            raise Exception("Wrong value of winner in draw_end", "Exiting game")
+        end_image = pygame.image.load(f"./resources/images/{winner_path}")
+        screen.blit(end_image, (0, 0))
+
     def draw(self, screen):
         screen.blit(self.background_image, (0, 0))
         if self.deck:
@@ -99,7 +111,7 @@ class Game:
                 #end game if not present
             elif card_type == 1:
                 pass #Defuse
-            elif card_type == 2:
+            elif card_type == 2: 
                 print("TacoCat action executing")
                 if len(self.stack.cards) > 1 and self.stack.cards[-2].card_type == 2:
                     print("Stealing card")
@@ -143,9 +155,9 @@ class Game:
                 random.shuffle(self.deck.cards)
                 print(self.deck.cards)
                 pass
-            elif card_type == 10:
-                print("Nope action executing")
-                pass
+            # elif card_type == 10:
+            #     print("Nope action executing")
+            #     pass
 
             return False
         
@@ -167,30 +179,59 @@ class Game:
         passed = self.player_two_pass_button.update()
         if passed:
             if self.player_two.skip == False:
-                self.player_two.hand.pass_turn(self.deck)
+                avoid_death = self.player_two.hand.pass_turn(self.deck)
+                if avoid_death == 3:
+                    return 1
+                elif avoid_death == 2:
+                    print("asd")
+                    pass
+                elif avoid_death.card_type == 0:
+                    print("asd2")
+                    self.deck.insert_card(avoid_death)
+                
             self.player_two.hand.reveal_hand()
             #AI player turn
             popped_card = self.player_one.AI_turn()
-            self.stack.update(popped_card)
-            do_card_action(self.player_one, self.player_two, popped_card.card_type)
-            if self.player_one.double_throw == True:
-                popped_card = self.player_one.AI_turn()
+            if popped_card is not None:
                 self.stack.update(popped_card)
                 do_card_action(self.player_one, self.player_two, popped_card.card_type)
+                if self.player_one.double_throw == True:
+                    popped_card = self.player_one.AI_turn()
+                    self.stack.update(popped_card)
+                    do_card_action(self.player_one, self.player_two, popped_card.card_type)
 
             if self.player_one.skip == False:
-                self.player_one.hand.pass_turn(self.deck)
+                avoid_death = self.player_one.hand.pass_turn(self.deck)
+                if avoid_death == 3:
+                    return 2
+                elif avoid_death == 2:
+                    print("asd")
+                    pass
+                elif avoid_death.card_type == 0:
+                    print("asd2")
+                    self.deck.insert_card(avoid_death)
+               
             self.player_one.skip = False
             self.player_one.double_throw = False
             self.player_two.skip = False
             self.player_two.double_throw = False
             self.player_one.hand.hide_hand()
+        return 0
 
 
 class Deck:
-    card_types = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]  # always add enum when a new card is added to deck
-    __MAX_EXPLOSIVE = 4
-    __MAX_DEFUSE = 6
+    card_types = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]  # always add enum when a new card is added to deck
+    __MAX_EXPLOSIVE = 1
+    __MAX_DEFUSE = 3
+    __MAX_TACOCAT = 4
+    __MAX_RAINBOWCAT = 4
+    __MAX_BEARDCAT = 4
+    __MAX_FAVOR = 3
+    __MAX_SKIP = 3
+    __MAX_REVEAL = 3
+    # __MAX_NOPE = 3
+    __MAX_SHUFFLE = 2
+    __MAX_ATTACK = 2
 
     def __init__(self):
         self.cards = []
@@ -249,13 +290,13 @@ class Deck:
                     return Shuffle(center_coords)
                 if card_version_lesser == 1:
                     return Shuffle_1(center_coords)
-            elif card_type == 10:
-                if card_version == 0:
-                    return Nope(center_coords)
-                if card_version == 1:
-                    return Nope_1(center_coords)
-                if card_version == 2:
-                    return Nope_2(center_coords)
+            # elif card_type == 10:
+            #     if card_version == 0:
+            #         return Nope(center_coords)
+            #     if card_version == 1:
+            #         return Nope_1(center_coords)
+            #     if card_version == 2:
+            #         return Nope_2(center_coords)
             else:
                 try:
                     raise Exception("Incorrect card type selected in deck", "Exiting game")
@@ -284,10 +325,33 @@ class Deck:
             self.cards.append(get_card_type(card, (350, 300)))
 
             # if max amount of card reached, then remove from card_types_deep_copy
+            #TODO: refactor it into a loop and a function
             card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 0, self.__MAX_EXPLOSIVE)
             card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 1, self.__MAX_DEFUSE)
+            card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 2, self.__MAX_TACOCAT)
+            card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 3, self.__MAX_RAINBOWCAT)
+            card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 4, self.__MAX_BEARDCAT)
+            card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 5, self.__MAX_FAVOR)
+            card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 6, self.__MAX_SKIP)
+            card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 7, self.__MAX_REVEAL)
+            card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 8, self.__MAX_ATTACK)
+            card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 9, self.__MAX_SHUFFLE)
+            # card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 10, self.__MAX_NOPE)
 
         self.already_filled = True
+
+    def insert_card(self, card):
+        random_index = 0
+        if len(self.cards) < 1:
+            random_index = 0
+        else:
+            try:
+                random_index = random.randrange(0, len(self.cards)-1)
+            except Exception as e:
+                top_index = 0
+        self.cards.insert(random_index, card)
+        for i in range(0, len(self.cards)):
+            self.cards[i].update(0)
 
     def draw_card(self):
         return self.cards.pop()
@@ -355,6 +419,9 @@ class Stack:
             self.cards[stack_cards_size-1].draw(surface)
 
     def update(self, popped_card):
+        if popped_card == None:
+            return
+
         self.cards.append(popped_card)
         for i in range(0, len(self.cards)):
             self.cards[i].update(0)
@@ -384,6 +451,12 @@ class Hand:
         self.amount = 0
         print("Hand created")
 
+    def has_defuse(self):
+        for i in range(0, len(self.cards)):
+            if self.cards[i].card_type == 1:
+                return i
+        return -1
+
     def draw_from_deck(self, deck):
         self.cards.append(deck.draw_card())
         self.amount = len(self.cards)
@@ -408,7 +481,17 @@ class Hand:
         self.cards.append(card)
 
     def pass_turn(self, deck):
-        self.cards.append(deck.draw_card())
+        drawn_card = deck.draw_card()
+        if drawn_card.card_type == 0:
+            avoid_death = self.has_defuse()
+            if avoid_death == -1:
+                return 3
+            else:
+                return drawn_card
+
+
+        self.cards.append(drawn_card)
+        return 2
 
     def reveal_hand(self):
         for i in range(0, len(self.cards)):
@@ -440,7 +523,12 @@ class Hand:
     def update(self, ai_turn=False):
         top_index = -1
         if ai_turn:
-            top_index = random.randrange(len(self.cards)-1)
+            if len(self.cards) < 1:
+                return None
+            try:
+                top_index = random.randrange(len(self.cards)-1)
+            except Exception as e:
+                top_index = 0
             self.cards[top_index].update(self.width_offset, True)
             print(self.cards)
             print(f"Hand cards length: {len(self.cards)-1}")
@@ -481,9 +569,12 @@ def main():
     menu = Menu()
     game = Game(1)
     show_menu = True
+    show_game = False
+    show_end = False
 
     DRAW_AMOUNT = 7
-    DECK_SIZE = 32
+    # DECK_SIZE = 32
+    DECK_SIZE = 29 #No Nope cards
     pygame.event.set_allowed([pygame.QUIT]) #remember to add events if needed
 
     while(1):
@@ -499,6 +590,7 @@ def main():
             menu_choice = menu.execute_choice()
             if menu_choice == 1:
                 show_menu = False
+                show_game = True
                 menu.hide()
                 game.reveal()
                 game.prepare_deck(DECK_SIZE)
@@ -507,9 +599,15 @@ def main():
                 game.create_stack()
                 game.reveal_player_two_cards()
                 
-        else:
+        elif show_game:
             game.draw(screen)
-            game.update()
+            winner = game.update()
+            game.winner = winner
+            if winner != 0:
+                show_game = False
+                show_end = True
+        elif show_end:
+            game.draw_end(screen)
         pygame.display.update()
 
 if __name__ == "__main__":
