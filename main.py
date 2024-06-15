@@ -6,6 +6,34 @@ from menu import Menu
 from button import Button
 from cardtypes import *
 
+
+class Sound:
+    cat_sounds_path = "./resources/cat-sounds/"
+    meow_sounds = []
+    music = None
+
+    def __init__(self):
+        self.meow_sounds = [
+                    pygame.mixer.Sound(self.cat_sounds_path + "angry-kitty.wav"),
+                    pygame.mixer.Sound(self.cat_sounds_path + "angry-roar.wav"),
+                    pygame.mixer.Sound(self.cat_sounds_path + "little-cat-pain.wav"),
+                    pygame.mixer.Sound(self.cat_sounds_path + "little-meow-attention.wav"),
+                    pygame.mixer.Sound(self.cat_sounds_path + "little-meow.wav"),
+                    pygame.mixer.Sound(self.cat_sounds_path + "sweet-meow.wav"),
+                ] 
+        self.music = pygame.mixer.Sound(self.cat_sounds_path + "battle-theme.mp3")
+
+    def play_meow(self):
+        rdn = random.randrange(len(self.meow_sounds))
+        self.meow_sounds[rdn].play()
+
+    def play_music(self):
+        self.music.play(loops=-1)
+
+    def stop_music(self):
+        self.music.stop()
+
+
 class Game:
     visibility = False
     player_one = None
@@ -16,10 +44,14 @@ class Game:
     pass_image_path = "./resources/images/pass.png"
     player_two_pass_button = None
     winner = 0
+    sounds = None
+    
 
     def __init__(self, mode):
         self.mode = mode
         self.background_image = pygame.image.load("./resources/images/background.jpg")
+        self.sounds = Sound()
+        
 
     def set_players(self, nickname_first, nickname_second):
         if self.player_one is None and self.player_two is None:
@@ -53,6 +85,12 @@ class Game:
         self.player_one.hand.print_hand()
         self.player_two.hand.print_hand()
         self.dealt_hands = True
+
+    def start_music(self):
+        self.sounds.play_music()
+    
+    def stop_music(self):
+        self.sounds.stop_music()
 
     def create_card_debug(self, surface):
         if not self.card_debug:
@@ -174,6 +212,7 @@ class Game:
         if popped_card is not None:
             self.stack.update(popped_card)
             card_action = do_card_action(self.player_two, self.player_one, popped_card.card_type) #act upon the type of the card
+            self.sounds.play_meow()
             self.player_two.hand.reveal_hand()
             self.player_one.hand.hide_hand()
         passed = self.player_two_pass_button.update()
@@ -598,6 +637,7 @@ def main():
                 game.prepare_hands(DRAW_AMOUNT)
                 game.create_stack()
                 game.reveal_player_two_cards()
+                game.start_music()
                 
         elif show_game:
             game.draw(screen)
@@ -608,6 +648,7 @@ def main():
                 show_end = True
         elif show_end:
             game.draw_end(screen)
+            game.stop_music()
         pygame.display.update()
 
 if __name__ == "__main__":

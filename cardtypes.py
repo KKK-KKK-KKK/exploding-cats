@@ -1,12 +1,15 @@
 import pygame
 import time
+import itertools
 
 class Card:
     stack_position = (150, 385)
     reverse_image_path = "./resources/images/cards/image-023.jpg"
     reverse_image = None
+    id_iter = itertools.count()
 
     def __init__(self):
+        self.id = next(self.id_iter)
         self.stack_number = 0
         self.in_deck = False
         self.visibility = False
@@ -16,6 +19,9 @@ class Card:
         self.card_used = False
         self.reverse_image = pygame.image.load(self.reverse_image_path).convert_alpha()
         print("Creating card")
+
+    def __repr__(self):
+        return f"id: {self.id}"
 
     def load_image(self, center_coords):
         if self.center_coords == None:
@@ -90,6 +96,9 @@ class ExplodingCat(Card):
         self.load_image(center_coords)
         print("ExplodingCat card created")
 
+    def __repr__(self):
+        return "Exploding Cat" + super().__repr__()
+
 class Defuse(Card):
     image_path = "./resources/images/cards/image-000.jpg"
     card_type = 1
@@ -99,6 +108,9 @@ class Defuse(Card):
         self.card_image = pygame.image.load(self.image_path).convert_alpha()
         self.load_image(center_coords)
         print("Defuse card created")
+
+    def __repr__(self):
+        return "Defuse " + super().__repr__()
 
 class Defuse_1(Defuse):
     image_path =  "./resources/images/cards/image-001.jpg"
@@ -116,6 +128,9 @@ class TacoCat(Card):
         self.load_image(center_coords)
         print("TacoCat card created")
 
+    def __repr__(self):
+        return "Taco Cat " + super().__repr__()
+
 class RainbowCat(Card):
     image_path = "./resources/images/cards/image-004.jpg"
     card_type = 3
@@ -125,6 +140,9 @@ class RainbowCat(Card):
         self.card_image = pygame.image.load(self.image_path).convert_alpha()
         self.load_image(center_coords)
         print("RainbowCat card created")
+
+    def __repr__(self):
+        return "Rainbow Cat " + super().__repr__()
 
 class BeardCat(Card):
     image_path = "./resources/images/cards/image-005.jpg"
@@ -136,6 +154,9 @@ class BeardCat(Card):
         self.load_image(center_coords)
         print("BeardCat card created")
 
+    def __repr__(self):
+        return "Beard Cat " + super().__repr__()
+
 
 class Favor(Card):
     image_path = "./resources/images/cards/image-006.jpg"
@@ -146,6 +167,9 @@ class Favor(Card):
         self.card_image = pygame.image.load(self.image_path).convert_alpha()
         self.load_image(center_coords)
         print("Favor card created")
+
+    def __repr__(self):
+        return "Favor " + super().__repr__()
 
 class Favor_1(Favor):
     image_path =  "./resources/images/cards/image-007.jpg"
@@ -163,6 +187,9 @@ class Skip(Card):
         self.load_image(center_coords)
         print("Skip card created")
 
+    def __repr__(self):
+        return "Skip " + super().__repr__()
+
 class Skip_1(Skip):
     image_path =  "./resources/images/cards/image-010.jpg"
 
@@ -178,6 +205,9 @@ class Reveal(Card):
         self.card_image = pygame.image.load(self.image_path).convert_alpha()
         self.load_image(center_coords)
         print("Reveal card created")
+
+    def __repr__(self):
+        return "Reveal " + super().__repr__()
 
 class Reveal_1(Reveal):
     image_path =  "./resources/images/cards/image-013.jpg"
@@ -196,6 +226,8 @@ class Attack(Card):
         self.load_image(center_coords)
         print("Attack card created")
 
+    def __repr__(self):
+        return "Attack " + super().__repr__()
 
 class Attack_1(Attack):
     image_path =  "./resources/images/cards/image-017.jpg"
@@ -210,6 +242,9 @@ class Shuffle(Card):
         self.load_image(center_coords)
         print("Shuffle card created")
 
+    def __repr__(self):
+        return "Shuffle " + super().__repr__()
+
 class Shuffle_1(Shuffle):
     image_path =  "./resources/images/cards/image-019.jpg"
 
@@ -222,6 +257,9 @@ class Nope(Card):
         self.card_image = pygame.image.load(self.image_path).convert_alpha()
         self.load_image(center_coords)
         print("Nope card created")
+
+    def __repr__(self):
+        return "Nope " + super().__repr__()
 
 class Nope_1(Nope):
     image_path = "./resources/images/cards/image-021.jpg"
