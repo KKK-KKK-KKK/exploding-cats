@@ -7,58 +7,33 @@ from button import Button
 from cardtypes import *
 
 
-class Sound:
-    cat_sounds_path = "./resources/cat-sounds/"
-    meow_sounds = []
-    music = None
-
-    def __init__(self):
-        self.meow_sounds = [
-                    pygame.mixer.Sound(self.cat_sounds_path + "angry-kitty.wav"),
-                    pygame.mixer.Sound(self.cat_sounds_path + "angry-roar.wav"),
-                    pygame.mixer.Sound(self.cat_sounds_path + "little-cat-pain.wav"),
-                    pygame.mixer.Sound(self.cat_sounds_path + "little-meow-attention.wav"),
-                    pygame.mixer.Sound(self.cat_sounds_path + "little-meow.wav"),
-                    pygame.mixer.Sound(self.cat_sounds_path + "sweet-meow.wav"),
-                ] 
-        self.music = pygame.mixer.Sound(self.cat_sounds_path + "battle-theme.mp3")
-
-    def play_meow(self):
-        rdn = random.randrange(len(self.meow_sounds))
-        self.meow_sounds[rdn].play()
-
-    def play_music(self):
-        self.music.play(loops=-1)
-
-    def stop_music(self):
-        self.music.stop()
-
-
 class Game:
-    visibility = False
-    player_one = None
-    player_two = None
-    deck = None
-    dealt_hands = False
-    card_debug = False
+    """Parent class which handles the actual game execution"""
     pass_image_path = "./resources/images/pass.png"
-    player_two_pass_button = None
-    winner = 0
-    sounds = None
-    
+    winner1_img_list = ["winner1.jpg", "winner1-2.jpg"]
+    winner2_img_list = ["winner2.jpg", "winner2-2.jpg"]
 
     def __init__(self, mode):
         self.mode = mode
         self.background_image = pygame.image.load("./resources/images/background.jpg")
         self.sounds = Sound()
-        
+        self.player_two_pass_button = None
+        self.player_one = None
+        self.player_two = None
+        self.deck = None
+        self.visibility = False
+        self.dealt_hands = False
+        self.card_debug = False
+        self.winner = 0
+        self.winner1_img = random.choice(self.winner1_img_list)
+        self.winner2_img = random.choice(self.winner2_img_list)
 
     def set_players(self, nickname_first, nickname_second):
         if self.player_one is None and self.player_two is None:
             self.player_one = Player(nickname_first)
             self.player_two = Player(nickname_second)
 
-    def remove_players(self):
+    def __remove_players(self):
         self.player_one = None
         self.player_two = None
 
@@ -86,6 +61,9 @@ class Game:
         self.player_two.hand.print_hand()
         self.dealt_hands = True
 
+    def play_explosion(self):
+        self.sounds.play_explosion()
+
     def start_music(self):
         self.sounds.play_music()
     
@@ -106,6 +84,9 @@ class Game:
         print("Hiding game")
         self.visibility = False
 
+    def reset_game_state(self):
+        self.stop_music()
+
     def reveal(self):
         if self.visibility:
             return
@@ -123,9 +104,9 @@ class Game:
     def draw_end(self, screen):
         winner_path = ""
         if self.winner == 1:
-            winner_path = "winner1.png"
+            winner_path = self.winner1_img
         elif self.winner == 2:
-            winner_path = "winner2.png"
+            winner_path = self.winner2_img
         else:
             raise Exception("Wrong value of winner in draw_end", "Exiting game")
         end_image = pygame.image.load(f"./resources/images/{winner_path}")
@@ -222,10 +203,8 @@ class Game:
                 if avoid_death == 3:
                     return 1
                 elif avoid_death == 2:
-                    print("asd")
                     pass
                 elif avoid_death.card_type == 0:
-                    print("asd2")
                     self.deck.insert_card(avoid_death)
                 
             self.player_two.hand.reveal_hand()
@@ -244,10 +223,8 @@ class Game:
                 if avoid_death == 3:
                     return 2
                 elif avoid_death == 2:
-                    print("asd")
                     pass
                 elif avoid_death.card_type == 0:
-                    print("asd2")
                     self.deck.insert_card(avoid_death)
                
             self.player_one.skip = False
@@ -257,8 +234,39 @@ class Game:
             self.player_one.hand.hide_hand()
         return 0
 
+class Sound:
+    """All program audio is handled in this class"""
+    cat_sounds_path = "./resources/cat-sounds/"
+    meow_sounds = []
+    music = None
+
+    def __init__(self):
+        self.meow_sounds = [
+                    pygame.mixer.Sound(self.cat_sounds_path + "angry-kitty.wav"),
+                    pygame.mixer.Sound(self.cat_sounds_path + "angry-roar.wav"),
+                    pygame.mixer.Sound(self.cat_sounds_path + "little-cat-pain.wav"),
+                    pygame.mixer.Sound(self.cat_sounds_path + "little-meow-attention.wav"),
+                    pygame.mixer.Sound(self.cat_sounds_path + "little-meow.wav"),
+                    pygame.mixer.Sound(self.cat_sounds_path + "sweet-meow.wav"),
+                ] 
+        self.explosion = pygame.mixer.Sound(self.cat_sounds_path + "explosion.wav")
+        self.music = pygame.mixer.Sound(self.cat_sounds_path + "battle-theme.mp3")
+
+    def play_meow(self):
+        rdn = random.randrange(len(self.meow_sounds))
+        self.meow_sounds[rdn].play()
+
+    def play_explosion(self):
+        self.explosion.play()
+
+    def play_music(self):
+        self.music.play(loops=-1)
+
+    def stop_music(self):
+        self.music.stop()
 
 class Deck:
+    """Class containing cards which are free to draw for players"""
     card_types = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]  # always add enum when a new card is added to deck
     __MAX_EXPLOSIVE = 1
     __MAX_DEFUSE = 3
@@ -364,18 +372,12 @@ class Deck:
             self.cards.append(get_card_type(card, (350, 300)))
 
             # if max amount of card reached, then remove from card_types_deep_copy
-            #TODO: refactor it into a loop and a function
-            card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 0, self.__MAX_EXPLOSIVE)
-            card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 1, self.__MAX_DEFUSE)
-            card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 2, self.__MAX_TACOCAT)
-            card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 3, self.__MAX_RAINBOWCAT)
-            card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 4, self.__MAX_BEARDCAT)
-            card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 5, self.__MAX_FAVOR)
-            card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 6, self.__MAX_SKIP)
-            card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 7, self.__MAX_REVEAL)
-            card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 8, self.__MAX_ATTACK)
-            card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 9, self.__MAX_SHUFFLE)
-            # card_types_deep_copy = skip_max_card_type(card_types_deep_copy, 10, self.__MAX_NOPE)
+            card_types_list = [self.__MAX_EXPLOSIVE, self.__MAX_DEFUSE, self.__MAX_TACOCAT, self.__MAX_RAINBOWCAT, self.__MAX_BEARDCAT,
+                                self.__MAX_FAVOR, self.__MAX_SKIP, self.__MAX_REVEAL, self.__MAX_ATTACK, self.__MAX_SHUFFLE,
+                                #self.__MAX_NOPE    
+                            ]
+            for i in range(0, len(card_types_list)):
+                card_types_deep_copy = skip_max_card_type(card_types_deep_copy, i, card_types_list[i])
 
         self.already_filled = True
 
@@ -442,6 +444,7 @@ class Deck:
         return viable_card
 
 class Stack:
+    """Class for cards that were already thrown during the gameplay"""
     stack_position = (150, 385) #this variable doesn't dictate location during game loop, look at Card class instead
 
     def __init__(self):
@@ -467,6 +470,7 @@ class Stack:
 
 
 class Player:
+    """Class defining players in the game and AI turns"""
     def __init__(self, nickname):
         self.score = 0
         self.nickname = nickname
@@ -483,6 +487,7 @@ class Player:
         pass
 
 class Hand:
+    """Class defining a Hand in which cards of a certain player are stored and possible to be used"""
     width_offset = 55
 
     def __init__(self):
@@ -549,13 +554,18 @@ class Hand:
             offset_y = 130
         elif side == "bottom":
             offset_y = 650
-        for i in range(len(self.cards)): #TODO: popraw ułożenie kart
+        for i in range(len(self.cards)):
             if i == 10 and side == "bottom":
-                offset_y += 30
+                offset_y += 50
             if i == 10 and side == "top":
-                offset_y -= 30
+                offset_y -= 50
             self.cards[i].load_image((60, 130))
-            self.cards[i].place_card((60 + i * self.width_offset, offset_y))
+
+            row_multiplier = i * self.width_offset
+            if i >= 10:
+                #"Placing card in second row"
+                row_multiplier = (i - 10) * self.width_offset
+            self.cards[i].place_card((60 + row_multiplier, offset_y))
             self.cards[i].draw(surface)
 
     
@@ -565,7 +575,7 @@ class Hand:
             if len(self.cards) < 1:
                 return None
             try:
-                top_index = random.randrange(len(self.cards)-1)
+                top_index = random.randrange(len(self.cards)-1) #randrange(0) throws an exception
             except Exception as e:
                 top_index = 0
             self.cards[top_index].update(self.width_offset, True)
@@ -578,6 +588,7 @@ class Hand:
             put_card_on_stack = self.cards[i].update(self.width_offset)
             if put_card_on_stack:
                 top_index = i
+                break
 
         if top_index != -1:
             print(self.cards)
@@ -616,6 +627,8 @@ def main():
     DECK_SIZE = 29 #No Nope cards
     pygame.event.set_allowed([pygame.QUIT]) #remember to add events if needed
 
+
+    end_timer_start = None
     while(1):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -649,6 +662,24 @@ def main():
         elif show_end:
             game.draw_end(screen)
             game.stop_music()
+            if end_timer_start == None:
+                end_timer_start = time.time()
+                game.play_explosion()
+            if (time.time() > end_timer_start + 5):
+                print("Removing game and returning to Menu")
+                show_end = False
+                show_menu = True
+                menu.choice = 0
+                menu.reveal()
+                game.reset_game_state()
+                game = None
+                game = Game(1)
+                end_timer_start = None
+            #play explosion
+            #change Gracz SI, Wygrałeś
+            
+            
+            
         pygame.display.update()
 
 if __name__ == "__main__":

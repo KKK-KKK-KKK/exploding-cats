@@ -12,3 +12,10 @@ Install dependencies:
 ## Running the game
 
 ```python main.py```
+
+## Resources
+https://mixkit.co/free-sound-effects/
+The Battle Cats (CC-BY-SA)
+
+## Guide
+https://www.wydawnictworebel.pl/repository/files/instrukcje/Eksplodujace_kotki_instrukcja_PL.pdf

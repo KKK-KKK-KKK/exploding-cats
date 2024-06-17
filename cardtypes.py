@@ -3,6 +3,7 @@ import time
 import itertools
 
 class Card:
+    """Class defining base Card objects, should not be used by itself. To add functionality a card object a child class such as Exploding Cat must be initialized"""
     stack_position = (150, 385)
     reverse_image_path = "./resources/images/cards/image-023.jpg"
     reverse_image = None

@@ -2,6 +2,7 @@ import pygame
 from button import Button
 
 class Menu:
+    """Menu class displayed on start and end of the game"""
     visibility = False
     choice = 0
 
